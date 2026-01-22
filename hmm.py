@@ -220,7 +220,7 @@ def train_and_eval_hmm(train_path, dev_path, test_path, language_name="LANG"):
     print(f"Training HMM tagger for {language_name}")
 
     train_sents = data_helpers.read_conllu_word_tag_sentences(train_path)
-    dev_sents = data_helpers.ead_conllu_word_tag_sentences(dev_path)
+    dev_sents = data_helpers.read_conllu_word_tag_sentences(dev_path)
     test_sents = data_helpers.read_conllu_word_tag_sentences(test_path)
 
     tag_unigrams, tag_bigrams, tag_trigrams, word_unigrams, tag_word = train_hmm_counts(train_sents)
