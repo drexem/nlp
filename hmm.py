@@ -113,7 +113,7 @@ def viterbi_decode(words, tags_set, p_tag0, p_tag1, p_tag2, p_tag3, lambdas,
                     continue
                 log_e = math.log(e)
 
-                tr = transition_prob(t_im2, t_im1, t_i, p_tag0, p_tag1, p_tag2, p_tag3, lambdas, tag_vocab_size)
+                tr = transition_prob(t_im2, t_im1, t_i, p_tag0, p_tag1, p_tag2, p_tag3, lambdas)
                 if tr <= 0:
                     continue
                 log_tr = math.log(tr)
@@ -133,7 +133,7 @@ def viterbi_decode(words, tags_set, p_tag0, p_tag1, p_tag2, p_tag3, lambdas,
     best_pair = None
 
     for (t_im2, t_im1), score in dp.items():
-        tr = transition_prob(t_im2, t_im1, "</s>", p_tag0, p_tag1, p_tag2, p_tag3, lambdas, tag_vocab_size)
+        tr = transition_prob(t_im2, t_im1, "</s>", p_tag0, p_tag1, p_tag2, p_tag3, lambdas)
         if tr <= 0:
             continue
         score_end = score + math.log(tr)
@@ -363,7 +363,7 @@ def forward_backward_trigram(words, tags_set, model):
     w0 = words[0]
     for t0 in tags_set:
         tr = transition_prob("<s>", "<s>", t0,
-                             p_tag0, p_tag1, p_tag2, p_tag3, lambdas, tag_vocab_size)
+                             p_tag0, p_tag1, p_tag2, p_tag3, lambdas)
         em = emission_prob(w0, t0, p0_word, p1_word, p2_emit, mu, word_vocab_size)
         alpha[0][("<s>", t0)] = tr * em
 
@@ -381,7 +381,7 @@ def forward_backward_trigram(words, tags_set, model):
                 continue
             for t_i in tags_set:
                 tr = transition_prob(t_im2, t_im1, t_i,
-                                     p_tag0, p_tag1, p_tag2, p_tag3, lambdas, tag_vocab_size)
+                                     p_tag0, p_tag1, p_tag2, p_tag3, lambdas)
                 if tr == 0.0:
                     continue
                 em = emission_prob(wi, t_i, p0_word, p1_word, p2_emit, mu, word_vocab_size)
@@ -401,7 +401,7 @@ def forward_backward_trigram(words, tags_set, model):
     for (t_im1, t_i) in alpha[T-1].keys():
         beta[T-1][(t_im1, t_i)] = transition_prob(
             t_im1, t_i, "</s>",
-            p_tag0, p_tag1, p_tag2, p_tag3, lambdas, tag_vocab_size
+            p_tag0, p_tag1, p_tag2, p_tag3, lambdas
         )
 
     for st in beta[T-1]:
@@ -413,7 +413,7 @@ def forward_backward_trigram(words, tags_set, model):
             s = 0.0
             for t_i in tags_set:
                 tr = transition_prob(t_im2, t_im1, t_i,
-                                     p_tag0, p_tag1, p_tag2, p_tag3, lambdas, tag_vocab_size)
+                                     p_tag0, p_tag1, p_tag2, p_tag3, lambdas)
                 if tr == 0.0:
                     continue
                 em = emission_prob(w_next, t_i, p0_word, p1_word, p2_emit, mu, word_vocab_size)
@@ -554,7 +554,7 @@ def baum_welch_full_trigram(unlabeled_sents_words, model, n_iters=5, min_prob=1e
                         tr = transition_prob(
                             t_im2, t_im1, t_i,
                             model["p_tag0"], model["p_tag1"], model["p_tag2"], model["p_tag3"],
-                            model["lambdas"], tag_vocab_size
+                            model["lambdas"]
                         )
                         if tr == 0.0:
                             continue
@@ -593,7 +593,7 @@ def baum_welch_full_trigram(unlabeled_sents_words, model, n_iters=5, min_prob=1e
                 tr_end = transition_prob(
                     t_im2, t_im1, "</s>",
                     model["p_tag0"], model["p_tag1"], model["p_tag2"], model["p_tag3"],
-                    model["lambdas"], tag_vocab_size
+                    model["lambdas"]
                 )
                 if tr_end == 0.0:
                     continue
