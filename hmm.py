@@ -175,10 +175,6 @@ def viterbi_decode(words, tags_set, p_tag0, p_tag1, p_tag2, p_tag3, lambdas,
 def flatten_tags(sentences):
     return [t for sent in sentences for (w, t) in sent]
 
-def flatten_words(sentences):
-    return [w for sent in sentences for (w, t) in sent]
-
-
 def tune_emission_mus(train_sentences, dev_sentences):
     tag_unigrams, tag_bigrams, tag_trigrams, word_unigrams, tag_word = train_hmm_counts(train_sentences)
     vocab_words = set(word_unigrams.keys())
@@ -350,7 +346,6 @@ def forward_backward_trigram(words, tags_set, model):
     p2_emit = model["p2_emit"]
     mu = model["mu"]
 
-    tag_vocab_size = model["tag_vocab_size"]
     word_vocab_size = model["word_vocab_size"]
 
     T = len(words)
@@ -427,73 +422,6 @@ def forward_backward_trigram(words, tags_set, model):
             beta[i][st] /= scales[i]
 
     return alpha, beta, scales, logZ
-
-def baum_welch_update_emissions(unlabeled_sents_words, model, n_iters=5, min_prob=1e-12):
-    tags_set = model["tags_set"]
-
-    for it in range(n_iters):
-        print(f"\n[Baum-Welch] Iteration {it+1}/{n_iters}")
-
-        expected_tag_word = Counter()  # c(t,w)
-        expected_tag = Counter()       # c(t)
-        expected_word = Counter()      # c(w)
-
-        total_logZ = 0.0
-        total_tokens = 0
-
-        for words in tqdm(unlabeled_sents_words):
-            if not words:
-                continue
-
-            alpha, beta, scales, logZ = forward_backward_trigram(words, tags_set, model)
-            total_logZ += logZ
-            total_tokens += len(words)
-
-            for i, w in enumerate(words):
-                denom = 0.0
-                gammas = {}
-
-                for state, a_val in alpha[i].items():
-                    g = a_val * beta[i].get(state, 0.0)
-                    gammas[state] = g
-                    denom += g
-
-                if denom == 0.0:
-                    continue
-
-                for (t_prev, t_cur), g in gammas.items():
-                    g /= denom
-                    expected_tag_word[(t_cur, w)] += g
-                    expected_tag[t_cur] += g
-
-                expected_word[w] += 1.0
-
-        avg_nll = -total_logZ / max(total_tokens, 1)
-        print(f"[Baum-Welch] avg -log P(words) per token: {avg_nll:}")
-
-
-        new_p2_emit = {}
-        for (t, w), c_tw in expected_tag_word.items():
-            ct = expected_tag[t]
-            if ct > 0.0:
-                new_p2_emit[(t, w)] = max(c_tw / ct, min_prob)
-
-        total_w = sum(expected_word.values())
-        if total_w == 0.0:
-            total_w = 1e-300
-
-        new_p1_word = {}
-        for w, cw in expected_word.items():
-            new_p1_word[w] = max(cw / total_w, min_prob)
-
-        model["p2_emit"] = new_p2_emit
-        model["p1_word"] = new_p1_word
-
-        V = max(len(new_p1_word), 1)
-        model["p0_word"] = 1.0 / V
-        model["word_vocab_size"] = V
-
-    return model
 
 def baum_welch_full_trigram(unlabeled_sents_words, model, n_iters=5, min_prob=1e-12):
     tags_set = model["tags_set"]
